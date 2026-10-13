@@ -1,0 +1,5 @@
+# 忽略 Python 相關檔案與設定，不讓它們上傳到 GitHub
+.python-version
+pyproject.toml
+uv.lock
+xtsd.py
