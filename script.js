@@ -23,10 +23,10 @@ async function startCamera() {
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
-// 調整後的特徵分析函數（大幅放寬門檻，更容易觸發）
+// 智慧特徵辨識函數 (已提高嚴格度)
 function analyzeFrame() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = 120;  // 縮小解析度以加快運算與容錯率
+        canvas.width = 120;  // 縮小解析度以加快運算
         canvas.height = 120;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
@@ -35,45 +35,45 @@ function analyzeFrame() {
         const w = canvas.width;
         const h = canvas.height;
 
-        let totalVariation = 0;
-        let darkAreaCount = 0;
-
-        // 簡化計算：統計畫面中的對比度與暗色區域（對應神尊與鬍鬚線條）
-        for (let y = 2; y < h - 2; y += 2) {
-            for (let x = 2; x < w - 2; x += 2) {
+        let centerDarkCount = 0;   // 中間：暗色臉部與長鬍子特徵
+        let outerLineCount = 0;    // 周圍：衣服或劍的輪廓線條
+        
+        // 掃描畫面像素並對應神尊的特徵位置
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
                 const idx = (y * w + x) * 4;
-                const gray = (pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114);
-                
-                // 計算與周邊像素的差異
-                const rightGray = (pixels[(y * w + (x + 2)) * 4] * 0.299);
-                const diff = Math.abs(gray - rightGray);
-                
-                totalVariation += diff;
+                const r = pixels[idx];
+                const g = pixels[idx + 1];
+                const b = pixels[idx + 2];
+                const gray = (r * 0.299 + g * 0.587 + b * 0.114); // 灰階值
 
-                // 統計中央區域的暗色像素（如頭髮、鬍子區塊）
-                if (y >= h * 0.3 && y < h * 0.8 && x >= w * 0.2 && x <= w * 0.8) {
-                    if (gray < 100) {
-                        darkAreaCount++;
-                    }
+                // 1. **核心區域 (30% ~ 80%)**：偵測暗色區塊 (長鬍子與頭髮)
+                // 此處將灰階閥值調得更暗 (從 100 降到 70) 且限制在更中心的位置
+                if (y >= h * 0.3 && y < h * 0.8 && x > w * 0.35 && x < w * 0.65 && gray < 70) {
+                    centerDarkCount++;
+                }
+
+                // 2. **周圍輪廓 (不特定區域)**：偵測邊緣線條
+                const rightIdx = (y * w + Math.min(x + 1, w - 1)) * 4;
+                const rightGray = (pixels[rightIdx] * 0.299 + pixels[rightIdx+1] * 0.587 + pixels[rightIdx+2] * 0.114);
+                if (Math.abs(gray - rightGray) > 50) { // 有明顯邊緣
+                    outerLineCount++;
                 }
             }
         }
 
-        // 可以在瀏覽器開發者工具的 Console 看到目前的數值，方便依實際情況微調
-        console.log("對比度數值:", totalVariation, "暗色區塊數值:", darkAreaCount);
-
-        // 放寬觸發條件：只要畫面有足夠的細節紋理與暗色特徵就顯示祝福
-        if (totalVariation > 35000 && darkAreaCount > 80) {
+        // 3. **綜合判定**：大幅提高核心深色像素的要求量 (從 80 提高到 200)
+        // 確保中央必須有足夠多且足夠暗的像素 (鬍子)，且畫面有一定輪廓
+        if (centerDarkCount > 200 && outerLineCount > 150) {
             blessing.style.display = 'block'; // 顯示祝福
         } else {
-            // 如果移開鏡頭，設定為自動隱藏
-            blessing.style.display = 'none'; 
+            blessing.style.display = 'none'; // 移開或未對準時隱藏
         }
     }
 }
 
-// 每 250 毫秒檢測一次
-setInterval(analyzeFrame, 250);
+// 每 300 毫秒檢測一次
+setInterval(analyzeFrame, 300);
 
 // 切換前後鏡頭
 document.getElementById('toggleBtn').addEventListener('click', () => {
