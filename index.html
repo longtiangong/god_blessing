@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>玄天上帝保佑你</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #111;
+            color: white;
+            text-align: center;
+            font-family: sans-serif;
+        }
+        #video-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 20px;
+            max-width: 100%;
+        }
+        video, canvas {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        #blessing {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 255, 0, 0.8);
+            color: black;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none; /* 預設隱藏 */
+            z-index: 10;
+        }
+        .btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>玄天上帝即時祈福鏡頭</h2>
+    <p>請將相機對準玄天上帝圖片</p>
+
+    <div id="video-container">
+        <div id="blessing">玄天上帝保佑你一切順利平安</div>
+        <video id="webcam" autoplay playsinline></video>
+    </div>
+    
+    <br>
+    <button class="btn" id="toggleBtn">切換相機 (前後鏡頭)</button>
+
+    <!-- 引入 TensorFlow.js 與 MobileNet 作為簡單的圖像特徵對比辨識 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="script.js"></script>
+</body>
+</html>
