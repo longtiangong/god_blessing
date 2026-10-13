@@ -23,11 +23,10 @@ async function startCamera() {
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
-// 智慧特徵辨識函數 (已提高嚴格度)
 function analyzeFrame() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = 120;  // 縮小解析度以加快運算
-        canvas.height = 120;
+        canvas.width = 100;
+        canvas.height = 100;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -35,39 +34,28 @@ function analyzeFrame() {
         const w = canvas.width;
         const h = canvas.height;
 
-        let centerDarkCount = 0;   // 中間：暗色臉部與長鬍子特徵
-        let outerLineCount = 0;    // 周圍：衣服或劍的輪廓線條
-        
-        // 掃描畫面像素並對應神尊的特徵位置
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-                const idx = (y * w + x) * 4;
-                const r = pixels[idx];
-                const g = pixels[idx + 1];
-                const b = pixels[idx + 2];
-                const gray = (r * 0.299 + g * 0.587 + b * 0.114); // 灰階值
+        let veryDarkPixels = 0; // 極深色像素（如鬍子）
+        let veryBrightPixels = 0; // 極亮色像素（如冠冕）
 
-                // 1. **核心區域 (30% ~ 80%)**：偵測暗色區塊 (長鬍子與頭髮)
-                // 此處將灰階閥值調得更暗 (從 100 降到 70) 且限制在更中心的位置
-                if (y >= h * 0.3 && y < h * 0.8 && x > w * 0.35 && x < w * 0.65 && gray < 70) {
-                    centerDarkCount++;
-                }
+        for (let i = 0; i < pixels.length; i += 4) {
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
+            const gray = (r * 0.299 + g * 0.587 + b * 0.114);
 
-                // 2. **周圍輪廓 (不特定區域)**：偵測邊緣線條
-                const rightIdx = (y * w + Math.min(x + 1, w - 1)) * 4;
-                const rightGray = (pixels[rightIdx] * 0.299 + pixels[rightIdx+1] * 0.587 + pixels[rightIdx+2] * 0.114);
-                if (Math.abs(gray - rightGray) > 50) { // 有明顯邊緣
-                    outerLineCount++;
-                }
+            // 統計畫面中極黑與極亮的比例（玄天上帝圖片同時具備極亮的冠冕與極黑的鬍子/陰影）
+            if (gray < 40) {
+                veryDarkPixels++;
+            } else if (gray > 210) {
+                veryBrightPixels++;
             }
         }
 
-        // 3. **綜合判定**：大幅提高核心深色像素的要求量 (從 80 提高到 200)
-        // 確保中央必須有足夠多且足夠暗的像素 (鬍子)，且畫面有一定輪廓
-        if (centerDarkCount > 200 && outerLineCount > 150) {
+        // 必須同時出現大量的極亮區塊與極暗區塊（一般房間背景或木紋無法同時滿足這兩個極端條件）
+        if (veryDarkPixels > 300 && veryBrightPixels > 400) {
             blessing.style.display = 'block'; // 顯示祝福
         } else {
-            blessing.style.display = 'none'; // 移開或未對準時隱藏
+            blessing.style.display = 'none'; // 未對準時強制隱藏
         }
     }
 }
